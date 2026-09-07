@@ -1,0 +1,238 @@
+:root {
+  --bg-deep: #040c17;
+  --bg-surface: #0a192c;
+  --bg-card: #0f233d;
+  --bg-card-hover: #163255;
+  --border-subtle: rgba(0, 229, 255, 0.15);
+  --border-glow: rgba(0, 229, 255, 0.4);
+  
+  --primary-cyan: #00e5ff;
+  --primary-cyan-dim: rgba(0, 229, 255, 0.12);
+  --gold-marinha: #d4af37;
+  --gold-marinha-glow: rgba(212, 175, 55, 0.3);
+  --solas-red: #ff3344;
+  --solas-red-glow: rgba(255, 51, 68, 0.3);
+  --alert-amber: #ffaa00;
+  --tactical-green: #00e676;
+  
+  --text-main: #f0f6fc;
+  --text-muted: #8b9bb4;
+  --text-dim: #51627b;
+  
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-tactical: 'Rajdhani', monospace, sans-serif;
+  
+  --shadow-hud: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
+  --shadow-glow-cyan: 0 0 20px rgba(0, 229, 255, 0.25);
+  --shadow-glow-gold: 0 0 20px rgba(212, 175, 55, 0.25);
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-deep);
+  color: var(--text-main);
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-image: 
+    radial-gradient(circle at 15% 20%, rgba(0, 229, 255, 0.04) 0%, transparent 40%),
+    radial-gradient(circle at 85% 80%, rgba(212, 175, 55, 0.03) 0%, transparent 40%),
+    linear-gradient(to bottom, #040c17, #071322);
+}
+
+/* Tipografia Tática */
+h1, h2, h3, .tactical-font {
+  font-family: var(--font-tactical);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* Utilitários de Vidro e Moldura Naval */
+.naval-card {
+  background: rgba(15, 35, 61, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-hud);
+  transition: all 0.25s ease;
+}
+
+.naval-card:hover {
+  border-color: var(--border-glow);
+}
+
+.naval-card-glow-cyan {
+  border-color: var(--primary-cyan);
+  box-shadow: var(--shadow-glow-cyan);
+}
+
+.naval-card-glow-gold {
+  border-color: var(--gold-marinha);
+  box-shadow: var(--shadow-glow-gold);
+}
+
+.naval-card-alert {
+  border-color: var(--solas-red);
+  box-shadow: var(--solas-red-glow);
+  animation: pulse-alert 2s infinite ease-in-out;
+}
+
+@keyframes pulse-alert {
+  0%, 100% { box-shadow: 0 0 10px rgba(255, 51, 68, 0.2); }
+  50% { box-shadow: 0 0 25px rgba(255, 51, 68, 0.5); }
+}
+
+/* Botões Táticos */
+.btn-tactical {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-tactical);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 12px 24px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+}
+
+.btn-cyan {
+  background: var(--primary-cyan);
+  color: #040c17;
+  box-shadow: 0 4px 14px rgba(0, 229, 255, 0.35);
+}
+
+.btn-cyan:hover:not(:disabled) {
+  background: #33ebff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 229, 255, 0.5);
+}
+
+.btn-gold {
+  background: linear-gradient(135deg, #d4af37, #f3cf65);
+  color: #040c17;
+  box-shadow: 0 4px 14px rgba(212, 175, 55, 0.35);
+}
+
+.btn-gold:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5);
+}
+
+.btn-danger {
+  background: var(--solas-red);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(255, 51, 68, 0.35);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--primary-cyan);
+  border: 1px solid var(--border-subtle);
+}
+
+.btn-outline:hover:not(:disabled) {
+  border-color: var(--primary-cyan);
+  background: var(--primary-cyan-dim);
+}
+
+.btn-tactical:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Badges e Tags */
+.tag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-tactical);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(0, 229, 255, 0.1);
+  color: var(--primary-cyan);
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  letter-spacing: 0.5px;
+}
+
+.tag-badge-gold {
+  background: rgba(212, 175, 55, 0.12);
+  color: var(--gold-marinha);
+  border-color: rgba(212, 175, 55, 0.3);
+}
+
+.tag-badge-red {
+  background: rgba(255, 51, 68, 0.15);
+  color: var(--solas-red);
+  border-color: rgba(255, 51, 68, 0.35);
+}
+
+/* HUD Grid Layouts */
+.hud-container {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.hud-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: rgba(10, 25, 44, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+}
+
+/* Animações e Scanlines */
+.scanline-overlay {
+  pointer-events: none;
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%, 
+    rgba(0, 0, 0, 0.15) 50%
+  );
+  background-size: 100% 4px;
+  opacity: 0.35;
+  z-index: 10;
+}
+
+/* Scrollbar Personalizada */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-deep);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #19385c;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-cyan);
+}
