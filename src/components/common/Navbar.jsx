@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
-import { Anchor, Radio, Volume2, QrCode, Wifi, WifiOff, Users, ArrowLeft } from 'lucide-react';
 import { isSupabaseConfigured } from '../../lib/supabaseClient';
+import { isFirebaseConfigured } from '../../lib/firebaseClient';
 import { soundManager } from '../../lib/soundEffects';
 
 export default function Navbar({ role = 'home', roomCode = 'EPM2026', participantCount = 0, onOpenQr, onBackHome }) {
   const [soundActive, setSoundActive] = useState(false);
-  const isOnline = isSupabaseConfigured();
+  const isCloudOnline = isFirebaseConfigured() || isSupabaseConfigured();
 
   const handleTestSound = () => {
     soundManager.playSonarPing();
@@ -125,7 +124,7 @@ export default function Navbar({ role = 'home', roomCode = 'EPM2026', participan
 
         {/* Indicador de Conexão */}
         <div 
-          title={isOnline ? 'Supabase Realtime Conectado' : 'Modo Híbrido Local Ativo (BroadcastChannel)'}
+          title={isCloudOnline ? 'Conexão em Nuvem Ativa (Firebase / Supabase)' : 'Modo Híbrido Local Ativo (BroadcastChannel)'}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -133,14 +132,14 @@ export default function Navbar({ role = 'home', roomCode = 'EPM2026', participan
             fontSize: '0.75rem',
             padding: '4px 8px',
             borderRadius: '4px',
-            background: isOnline ? 'rgba(0, 230, 118, 0.1)' : 'rgba(0, 229, 255, 0.1)',
-            color: isOnline ? 'var(--tactical-green)' : 'var(--primary-cyan)',
-            border: `1px solid ${isOnline ? 'rgba(0, 230, 118, 0.25)' : 'rgba(0, 229, 255, 0.25)'}`
+            background: isCloudOnline ? 'rgba(0, 230, 118, 0.1)' : 'rgba(0, 229, 255, 0.1)',
+            color: isCloudOnline ? 'var(--tactical-green)' : 'var(--primary-cyan)',
+            border: `1px solid ${isCloudOnline ? 'rgba(0, 230, 118, 0.25)' : 'rgba(0, 229, 255, 0.25)'}`
           }}
         >
-          {isOnline ? <Wifi size={14} /> : <Radio size={14} />}
+          {isCloudOnline ? <Wifi size={14} /> : <Radio size={14} />}
           <span style={{ fontFamily: 'var(--font-tactical)', fontWeight: 600 }}>
-            {isOnline ? 'NUVEM' : 'LOCAL'}
+            {isCloudOnline ? 'FIREBASE NUVEM' : 'LOCAL'}
           </span>
         </div>
       </div>
