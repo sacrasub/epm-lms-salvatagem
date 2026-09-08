@@ -5,6 +5,7 @@ import VideoPlayerPill from './VideoPlayerPill';
 import TimerClock from './TimerClock';
 import LeaderboardView from './LeaderboardView';
 import DoubtTicker from './DoubtTicker';
+import SlidePresenter from './SlidePresenter';
 import { soundManager } from '../../lib/soundEffects';
 import { 
   Play, 
@@ -17,7 +18,8 @@ import {
   ChevronRight, 
   ChevronLeft,
   Eye,
-  FileText
+  FileText,
+  Presentation
 } from 'lucide-react';
 
 export default function TelaoHUD({
@@ -122,7 +124,17 @@ export default function TelaoHUD({
               </span>
             </div>
 
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => onSetEtapa(0, 'slides')}
+                className={`btn-tactical ${state.tipoConteudo === 'slides' ? 'btn-gold' : 'btn-outline'}`}
+                style={{ padding: '6px 14px', fontSize: '0.85rem' }}
+                title="Apresentar Slides Oficiais em Tela Cheia com Dock Tático"
+              >
+                <Presentation size={15} />
+                <span>0. Slides ({currentMission.dia})</span>
+              </button>
+
               <button
                 onClick={() => onSetEtapa(0, 'storytelling')}
                 className={`btn-tactical ${state.tipoConteudo === 'storytelling' ? 'btn-cyan' : 'btn-outline'}`}
@@ -158,6 +170,19 @@ export default function TelaoHUD({
           </div>
 
           {/* PALCO CENTRAL CONFORME O TIPO DE CONTEÚDO */}
+
+          {/* 0. MODO SLIDES EXPOSITIVOS OFICIAIS COM DOCK TÁTICO */}
+          {state.tipoConteudo === 'slides' && (
+            <SlidePresenter
+              mission={currentMission}
+              participantes={participantes}
+              respostas={respostas}
+              duvidas={duvidas}
+              state={state}
+              onTriggerDynamic={onTriggerDynamic}
+              onCloseDynamic={onCloseDynamic}
+            />
+          )}
           
           {/* 1. MODO BRIEFING / STORYTELLING */}
           {state.tipoConteudo === 'storytelling' && (
@@ -179,7 +204,7 @@ export default function TelaoHUD({
                 "{currentMission.briefing}"
               </p>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto', flexWrap: 'wrap', gap: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <div style={{ fontSize: '2.5rem' }}>{currentBadge?.icone}</div>
                   <div>
@@ -190,7 +215,17 @@ export default function TelaoHUD({
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={() => onSetEtapa(0, 'slides')}
+                    className="btn-tactical btn-gold"
+                    style={{ padding: '12px 20px' }}
+                    title="Apresentar Slides Oficiais em Modo Cinema / Tela Cheia"
+                  >
+                    <Presentation size={18} />
+                    <span>APRESENTAR SLIDES ({currentMission.dia})</span>
+                  </button>
+
                   <button
                     onClick={handleSoundAlarm}
                     className="btn-tactical btn-danger"
@@ -206,7 +241,7 @@ export default function TelaoHUD({
                     className="btn-tactical btn-cyan"
                     style={{ padding: '12px 20px' }}
                   >
-                    <span>INICIAR PÍLULAS DE VÍDEO</span>
+                    <span>PÍLULAS DE VÍDEO</span>
                     <ChevronRight size={18} />
                   </button>
                 </div>
