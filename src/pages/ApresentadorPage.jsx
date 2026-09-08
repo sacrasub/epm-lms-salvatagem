@@ -26,8 +26,11 @@ import {
   Sliders,
   CheckCircle,
   Layers,
-  MessageSquare
+  MessageSquare,
+  Trash2,
+  Square
 } from 'lucide-react';
+import LeaderboardView from '../components/telao/LeaderboardView';
 
 export default function ApresentadorPage({ roomCode = 'EPM2026', onBackHome }) {
   const [data, setData] = useState({
@@ -199,12 +202,15 @@ export default function ApresentadorPage({ roomCode = 'EPM2026', onBackHome }) {
         goToSlide(totalSlides - 1);
       } else if (e.key === 'Escape') {
         setActiveModal(null);
+        if (data.state.subEtapa === 'video' || data.state.videoAtivoId) {
+          realtimeEngine.closeVideo();
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [nextSlide, prevSlide, toggleBlackout, goToSlide, totalSlides]);
+  }, [nextSlide, prevSlide, toggleBlackout, goToSlide, totalSlides, data.state.subEtapa, data.state.videoAtivoId]);
 
   // Salva anotação pessoal rápida do slide
   const handleSavePersonalNote = (text) => {
@@ -233,8 +239,7 @@ export default function ApresentadorPage({ roomCode = 'EPM2026', onBackHome }) {
   };
 
   const handleShowLeaderboard = () => {
-    realtimeEngine.setEtapa(2, 'leaderboard');
-    setActiveModal(null);
+    setActiveModal(activeModal === 'placar' ? null : 'placar');
   };
 
   const handleReturnToSlides = () => {
@@ -810,15 +815,37 @@ export default function ApresentadorPage({ roomCode = 'EPM2026', onBackHome }) {
             <span>Pílulas em Vídeo ({currentMission.videos?.length || 0})</span>
           </button>
 
+          {/* Botão de Interromper Vídeo em Destaque (se vídeo ativo) */}
+          {(data.state.subEtapa === 'video' || data.state.videoAtivoId) && (
+            <button
+              onClick={() => realtimeEngine.closeVideo()}
+              className="btn-tactical btn-danger"
+              style={{
+                padding: '8px 16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                boxShadow: '0 0 15px rgba(255, 59, 48, 0.4)',
+                animation: 'pulse 2s infinite'
+              }}
+              title="Interrompe o vídeo imediatamente e volta aos slides (ESC)"
+            >
+              <Square size={16} fill="#ffffff" />
+              <span>Interromper Vídeo (ESC)</span>
+            </button>
+          )}
+
           {/* Placar de Líderes */}
           <button
             onClick={handleShowLeaderboard}
-            className="btn-tactical btn-outline"
+            className={`btn-tactical ${activeModal === 'placar' ? 'btn-gold' : 'btn-outline'}`}
             style={{ padding: '8px 14px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}
-            title="Exibe o ranking de XP e medalhas no projetor"
+            title="Abre o placar de líderes no cockpit e permite projetar no telão"
           >
             <Trophy size={16} color="var(--gold-marinha)" />
-            <span>Placar</span>
+            <span>Placar {data.state.subEtapa === 'leaderboard' ? '(No Telão)' : ''}</span>
           </button>
 
           {/* Dúvidas dos Alunos */}
@@ -1077,9 +1104,34 @@ export default function ApresentadorPage({ roomCode = 'EPM2026', onBackHome }) {
                   DÚVIDAS ENVIADAS PELOS ALUNOS ({data.duvidas.length})
                 </h3>
               </div>
-              <button onClick={() => setActiveModal(null)} className="btn-tactical btn-outline" style={{ padding: '4px 8px' }}>
-                ✕
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {data.duvidas.length > 0 && (
+                  <button
+                    onClick={() => {
+                      if (window.confirm('Deseja limpar todas as dúvidas dos alunos desta sala?')) {
+                        realtimeEngine.clearDoubts();
+                      }
+                    }}
+                    className="btn-tactical btn-outline"
+                    style={{
+                      padding: '4px 12px',
+                      color: '#ff5252',
+                      borderColor: 'rgba(255, 82, 82, 0.4)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontSize: '0.8rem'
+                    }}
+                    title="Limpar todas as dúvidas"
+                  >
+                    <Trash2 size={14} />
+                    <span>Limpar Todas</span>
+                  </button>
+                )}
+                <button onClick={() => setActiveModal(null)} className="btn-tactical btn-outline" style={{ padding: '4px 8px' }}>
+                  ✕
+                </button>
+              </div>
             </div>
 
             <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -1095,19 +1147,117 @@ export default function ApresentadorPage({ roomCode = 'EPM2026', onBackHome }) {
                       background: 'rgba(15, 35, 61, 0.8)',
                       border: '1px solid var(--border-subtle)',
                       borderRadius: 'var(--radius-sm)',
-                      padding: '12px 16px'
+                      padding: '12px 16px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      gap: '12px'
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                      <span style={{ fontWeight: 700, color: 'var(--gold-marinha)', fontSize: '0.85rem' }}>
-                        {d.aluno}
-                      </span>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{d.timestamp}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                        <span style={{ fontWeight: 700, color: 'var(--gold-marinha)', fontSize: '0.85rem' }}>
+                          {d.aluno}
+                        </span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{d.timestamp}</span>
+                      </div>
+                      <div style={{ fontSize: '0.95rem', color: '#fff', lineHeight: 1.4 }}>{d.texto}</div>
                     </div>
-                    <div style={{ fontSize: '0.95rem', color: '#fff', lineHeight: 1.4 }}>{d.texto}</div>
+                    <button
+                      onClick={() => realtimeEngine.deleteDoubt(d.id)}
+                      className="btn-tactical btn-outline"
+                      style={{
+                        padding: '6px',
+                        color: 'var(--text-dim)',
+                        borderColor: 'transparent',
+                        background: 'rgba(255, 255, 255, 0.05)'
+                      }}
+                      title="Excluir esta dúvida"
+                      onMouseEnter={(e) => { e.currentTarget.style.color = '#ff5252'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-dim)'; }}
+                    >
+                      <Trash2 size={15} />
+                    </button>
                   </div>
                 ))
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4.4 MODAL DE PLACAR DE LÍDERES NO COCKPIT */}
+      {activeModal === 'placar' && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 100,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px'
+          }}
+          onClick={() => setActiveModal(null)}
+        >
+          <div
+            className="naval-card"
+            style={{
+              maxWidth: '720px',
+              width: '100%',
+              maxHeight: '85vh',
+              padding: '24px',
+              background: 'rgba(10, 25, 44, 0.98)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              border: '2px solid var(--gold-marinha)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Trophy size={24} color="var(--gold-marinha)" />
+                <h3 style={{ margin: 0, color: '#fff', fontSize: '1.2rem' }}>
+                  PLACAR DE LÍDERES — TRIPULAÇÃO EPM
+                </h3>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  onClick={() => {
+                    realtimeEngine.setEtapa(2, 'leaderboard');
+                  }}
+                  className="btn-tactical btn-cyan"
+                  style={{ padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}
+                  title="Projeta este placar na 2ª tela / projetor para os alunos verem"
+                >
+                  <Tv size={16} />
+                  <span>Projetar no Telão</span>
+                </button>
+                <button
+                  onClick={() => {
+                    handleReturnToSlides();
+                  }}
+                  className="btn-tactical btn-outline"
+                  style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                  title="Volta a 2ª tela para os slides de aula"
+                >
+                  <span>Voltar aos Slides</span>
+                </button>
+                <button onClick={() => setActiveModal(null)} className="btn-tactical btn-outline" style={{ padding: '4px 8px' }}>
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div style={{ flex: 1, minHeight: '380px', overflowY: 'auto' }}>
+              <LeaderboardView
+                participantes={data.participantes}
+                respostas={data.respostas}
+                perguntaAtiva={data.state.perguntaAtiva}
+              />
             </div>
           </div>
         </div>

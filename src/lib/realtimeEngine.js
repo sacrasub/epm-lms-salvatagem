@@ -234,6 +234,10 @@ class RealtimeEngine {
           }
         } else if (type === 'SUBMIT_DOUBT') {
           push(ref(db, `salas/${this.roomCode}/duvidas`), payload);
+        } else if (type === 'CLEAR_DOUBTS') {
+          set(ref(db, `salas/${this.roomCode}/duvidas`), null);
+        } else if (type === 'DELETE_DOUBT') {
+          set(ref(db, `salas/${this.roomCode}/duvidas/${payload.id}`), null);
         }
       } catch (e) {
         console.warn('[Firebase Emit Err]', e);
@@ -325,11 +329,27 @@ class RealtimeEngine {
 
       case 'SUBMIT_DOUBT': {
         this.duvidas.unshift({
-          id: String(Date.now()),
+          id: message.payload.id || String(Date.now()),
           aluno: message.payload.aluno,
           texto: message.payload.texto,
-          timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+          timestamp: message.payload.timestamp || new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
         });
+        break;
+      }
+
+      case 'CLEAR_DOUBTS': {
+        this.duvidas = [];
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem(`epm_duv_${this.roomCode}`);
+        }
+        break;
+      }
+
+      case 'DELETE_DOUBT': {
+        this.duvidas = this.duvidas.filter((d) => d.id !== message.payload.id);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(`epm_duv_${this.roomCode}`, JSON.stringify(this.duvidas));
+        }
         break;
       }
 
@@ -400,6 +420,13 @@ class RealtimeEngine {
       perguntaAtiva: null,
       timerFim: null,
       segundosRestantes: 0
+    });
+  }
+
+  closeVideo() {
+    this.emit('UPDATE_STATE', {
+      tipoConteudo: 'slides',
+      videoAtivoId: null
     });
   }
 
@@ -478,7 +505,28 @@ class RealtimeEngine {
   }
 
   sendDoubt(aluno, texto) {
-    this.emit('SUBMIT_DOUBT', { aluno, texto });
+    this.emit('SUBMIT_DOUBT', {
+      id: 'duv_' + Date.now(),
+      aluno,
+      texto,
+      timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    });
+  }
+
+  clearDoubts() {
+    this.duvidas = [];
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(`epm_duv_${this.roomCode}`);
+    }
+    this.emit('CLEAR_DOUBTS', {});
+  }
+
+  deleteDoubt(doubtId) {
+    this.duvidas = this.duvidas.filter((d) => d.id !== doubtId);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`epm_duv_${this.roomCode}`, JSON.stringify(this.duvidas));
+    }
+    this.emit('DELETE_DOUBT', { id: doubtId });
   }
 
   resetRoom() {

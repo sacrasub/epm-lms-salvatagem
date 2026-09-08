@@ -63,7 +63,10 @@ export default function ProjetorPage({ roomCode = 'EPM2026' }) {
   // Teclas de controle no Projetor (caso o passador de slides esteja plugado nesta máquina)
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'f' || e.key === 'F' || e.key === 'F11') {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        realtimeEngine.closeVideo();
+      } else if (e.key === 'f' || e.key === 'F' || e.key === 'F11') {
         e.preventDefault();
         toggleFullscreen();
       } else if (e.key === 'b' || e.key === 'B' || e.key === '.') {
@@ -77,6 +80,10 @@ export default function ProjetorPage({ roomCode = 'EPM2026' }) {
         e.key === 'Enter'
       ) {
         e.preventDefault();
+        // Se houver vídeo ativo, fecha o vídeo e avança
+        if (data.state.videoAtivoId) {
+          realtimeEngine.closeVideo();
+        }
         const currentM = MISSIONS.find(m => m.id === data.state.missaoAtual) || MISSIONS[0];
         const maxIdx = (currentM.slidesImages?.length || 1) - 1;
         const nextIdx = Math.min((data.state.slideAtualIndex || 0) + 1, maxIdx);
@@ -88,6 +95,9 @@ export default function ProjetorPage({ roomCode = 'EPM2026' }) {
         e.key === 'Backspace'
       ) {
         e.preventDefault();
+        if (data.state.videoAtivoId) {
+          realtimeEngine.closeVideo();
+        }
         const prevIdx = Math.max((data.state.slideAtualIndex || 0) - 1, 0);
         realtimeEngine.setSlide(prevIdx, false);
       }
@@ -172,7 +182,7 @@ export default function ProjetorPage({ roomCode = 'EPM2026' }) {
           }}
         >
           <div style={{ width: '90%', maxWidth: '1280px' }}>
-            <VideoPlayerPill video={activeVideo} />
+            <VideoPlayerPill video={activeVideo} onClose={() => realtimeEngine.closeVideo()} />
           </div>
         </div>
       )}

@@ -1,13 +1,26 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Play, Pause, RotateCcw, Volume2, VolumeX, Maximize, Film } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2, VolumeX, Maximize, Film, X } from 'lucide-react';
 
-export default function VideoPlayerPill({ video, onEnded }) {
+export default function VideoPlayerPill({ video, onEnded, onClose }) {
   const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState('00:00');
   const [duration, setDuration] = useState('00:00');
+
+  // Escuta ESC para fechar o vídeo
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && onClose) {
+        e.preventDefault();
+        if (videoRef.current) videoRef.current.pause();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -101,9 +114,35 @@ export default function VideoPlayerPill({ video, onEnded }) {
             {video.titulo}
           </h3>
         </div>
-        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-          Duração: <strong style={{ color: 'var(--primary-cyan)' }}>{video.duracao}</strong>
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+            Duração: <strong style={{ color: 'var(--primary-cyan)' }}>{video.duracao}</strong>
+          </span>
+
+          {onClose && (
+            <button
+              onClick={() => {
+                if (videoRef.current) videoRef.current.pause();
+                onClose();
+              }}
+              className="btn-tactical btn-danger"
+              style={{
+                padding: '6px 14px',
+                fontSize: '0.85rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontWeight: 700,
+                boxShadow: '0 0 12px rgba(255, 59, 48, 0.45)',
+                cursor: 'pointer'
+              }}
+              title="Interromper vídeo e voltar aos slides (ESC)"
+            >
+              <X size={16} />
+              <span>FECHAR VÍDEO (ESC)</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Container de Vídeo */}
@@ -227,6 +266,21 @@ export default function VideoPlayerPill({ video, onEnded }) {
           >
             <Maximize size={16} />
           </button>
+
+          {onClose && (
+            <button
+              onClick={() => {
+                if (videoRef.current) videoRef.current.pause();
+                onClose();
+              }}
+              className="btn-tactical btn-danger"
+              style={{ padding: '8px 14px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}
+              title="Interromper vídeo e voltar aos slides"
+            >
+              <X size={16} />
+              <span>INTERROMPER</span>
+            </button>
+          )}
         </div>
       </div>
     </div>
