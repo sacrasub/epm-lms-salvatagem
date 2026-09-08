@@ -4,12 +4,12 @@ import { BADGES, calcularPatente } from '../../data/badgesData';
 import QuizCard from './QuizCard';
 import MochilaSalvamento from './MochilaSalvamento';
 import DoubtInput from './DoubtInput';
-import InfographicViewer from './InfographicViewer';
+import ManuaisGuiaBolsoViewer from './ManuaisGuiaBolsoViewer';
 import { 
   Zap, 
   Briefcase, 
   HelpCircle, 
-  Image as ImageIcon, 
+  BookOpen, 
   Radio, 
   CheckCircle,
   AlertTriangle,
@@ -123,14 +123,14 @@ export default function AlunoHUD({
         </button>
 
         <button
-          onClick={() => setActiveTab('infografico')}
+          onClick={() => setActiveTab('manuais')}
           className="naval-card"
           style={{
             padding: '8px 4px',
             textAlign: 'center',
             cursor: 'pointer',
-            background: activeTab === 'infografico' ? 'rgba(0, 229, 255, 0.2)' : 'rgba(10, 25, 44, 0.6)',
-            border: activeTab === 'infografico' ? '1px solid var(--primary-cyan)' : '1px solid var(--border-subtle)',
+            background: activeTab === 'manuais' ? 'rgba(0, 229, 255, 0.2)' : 'rgba(10, 25, 44, 0.6)',
+            border: activeTab === 'manuais' ? '1px solid var(--primary-cyan)' : '1px solid var(--border-subtle)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -138,9 +138,9 @@ export default function AlunoHUD({
             borderRadius: 'var(--radius-sm)'
           }}
         >
-          <ImageIcon size={16} color={activeTab === 'infografico' ? 'var(--primary-cyan)' : 'var(--text-muted)'} />
-          <span style={{ fontSize: '0.7rem', fontWeight: 700, fontFamily: 'var(--font-tactical)', color: activeTab === 'infografico' ? '#fff' : 'var(--text-muted)' }}>
-            INFOGRÁFICO
+          <BookOpen size={16} color={activeTab === 'manuais' ? 'var(--primary-cyan)' : 'var(--text-muted)'} />
+          <span style={{ fontSize: '0.7rem', fontWeight: 700, fontFamily: 'var(--font-tactical)', color: activeTab === 'manuais' ? '#fff' : 'var(--text-muted)' }}>
+            MANUAIS & GUIA
           </span>
         </button>
       </div>
@@ -247,9 +247,9 @@ export default function AlunoHUD({
         <DoubtInput alunoNome={aluno.nome} onSendDoubt={onSendDoubt} />
       )}
 
-      {/* 4. ABA INFOGRÁFICO */}
-      {activeTab === 'infografico' && (
-        <InfographicViewer mission={currentMission} />
+      {/* 4. ABA MANUAIS E GUIA DE BOLSO (DOWNLOADS) */}
+      {activeTab === 'manuais' && (
+        <ManuaisGuiaBolsoViewer currentMissionId={state.missaoAtual} />
       )}
 
     </div>

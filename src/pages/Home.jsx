@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Anchor, Monitor, Smartphone, Shield, Radio, ArrowRight, Award } from 'lucide-react';
 import { isSupabaseConfigured } from '../lib/supabaseClient';
 
-export default function Home({ onEnterTelao, onEnterAluno }) {
+export default function Home({ onEnterTelao, onEnterApresentador, onEnterAluno }) {
   const [roomCode, setRoomCode] = useState('EPM2026');
   const [nomeGuerra, setNomeGuerra] = useState('');
   const [mode, setMode] = useState('choice'); // 'choice', 'aluno_form'
+  const [isRestrictedToAluno, setIsRestrictedToAluno] = useState(false);
   const isCloudConnected = isSupabaseConfigured();
 
   // Se vier com parâmetros na URL (ex: ?sala=EPM2026&modo=aluno)
@@ -15,9 +16,19 @@ export default function Home({ onEnterTelao, onEnterAluno }) {
     const paramModo = params.get('modo');
 
     if (paramSala) setRoomCode(paramSala);
-    if (paramModo === 'aluno') setMode('aluno_form');
+    if (paramModo === 'aluno') {
+      setMode('aluno_form');
+      setIsRestrictedToAluno(true);
+    }
+    if (paramModo === 'apresentador' && onEnterApresentador) onEnterApresentador(paramSala || 'EPM2026');
     if (paramModo === 'telao') onEnterTelao(paramSala || 'EPM2026');
-  }, [onEnterTelao]);
+
+    // Recupera último nome de guerra salvo no celular
+    try {
+      const savedNome = localStorage.getItem('epm_last_nome_guerra');
+      if (savedNome) setNomeGuerra(savedNome);
+    } catch (e) {}
+  }, [onEnterTelao, onEnterApresentador]);
 
   const handleStartAluno = (e) => {
     e.preventDefault();
@@ -67,13 +78,13 @@ export default function Home({ onEnterTelao, onEnterAluno }) {
 
       {/* Cartão de Seleção de Modo */}
       <div className="naval-card naval-card-glow-cyan" style={{
-        maxWidth: '520px',
+        maxWidth: '560px',
         width: '100%',
         padding: '32px',
         background: 'rgba(10, 25, 44, 0.9)'
       }}>
         {mode === 'choice' ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ textAlign: 'center', marginBottom: '8px' }}>
               <h2 style={{ fontSize: '1.25rem', color: '#fff', marginBottom: '4px' }}>
                 SELECIONE SEU TERMINAL DE BORDO
@@ -83,12 +94,71 @@ export default function Home({ onEnterTelao, onEnterAluno }) {
               </p>
             </div>
 
-            {/* Opção 1: Telão da Sala */}
+            {/* Opção Master: Modo Apresentador (Dual-Screen: Laptop + Projetor) */}
+            <button
+              onClick={() => (onEnterApresentador ? onEnterApresentador(roomCode) : onEnterTelao(roomCode))}
+              className="naval-card naval-card-glow-gold"
+              style={{
+                padding: '18px 20px',
+                textAlign: 'left',
+                cursor: 'pointer',
+                background: 'linear-gradient(135deg, rgba(20, 45, 75, 0.95), rgba(10, 25, 44, 0.95))',
+                border: '1.5px solid var(--gold-marinha)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+                transition: 'all 0.2s ease',
+                position: 'relative'
+              }}
+            >
+              <div style={{
+                position: 'absolute',
+                top: '-10px',
+                right: '16px',
+                background: 'var(--gold-marinha)',
+                color: '#07162c',
+                fontSize: '0.65rem',
+                fontWeight: 800,
+                padding: '2px 8px',
+                borderRadius: '10px',
+                letterSpacing: '0.5px'
+              }}>
+                RECOMENDADO PARA 2 TELAS
+              </div>
+
+              <div style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '10px',
+                background: 'rgba(212, 175, 55, 0.2)',
+                border: '1px solid var(--gold-marinha)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--gold-marinha)',
+                flexShrink: 0
+              }}>
+                <Monitor size={26} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <h3 style={{ fontSize: '1.05rem', color: '#fff', margin: 0 }}>
+                    MODO APRESENTADOR (2 TELAS)
+                  </h3>
+                  <ArrowRight size={18} color="var(--gold-marinha)" />
+                </div>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
+                  Laptop com slide atual, próximo slide, notas DPC e controle por passador de slides + Janela limpa no Projetor.
+                </p>
+              </div>
+            </button>
+
+            {/* Opção 2: Telão da Sala HUD */}
             <button
               onClick={() => onEnterTelao(roomCode)}
               className="naval-card"
               style={{
-                padding: '20px',
+                padding: '16px 20px',
                 textAlign: 'left',
                 cursor: 'pointer',
                 background: 'rgba(15, 35, 61, 0.8)',
@@ -100,8 +170,8 @@ export default function Home({ onEnterTelao, onEnterAluno }) {
               }}
             >
               <div style={{
-                width: '50px',
-                height: '50px',
+                width: '48px',
+                height: '48px',
                 borderRadius: '10px',
                 background: 'rgba(0, 229, 255, 0.15)',
                 border: '1px solid var(--primary-cyan)',
@@ -111,27 +181,27 @@ export default function Home({ onEnterTelao, onEnterAluno }) {
                 color: 'var(--primary-cyan)',
                 flexShrink: 0
               }}>
-                <Monitor size={26} />
+                <Radio size={24} />
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <h3 style={{ fontSize: '1.1rem', color: '#fff', margin: 0 }}>
-                    TELÃO DA SALA (INSTRUTOR)
+                  <h3 style={{ fontSize: '1.05rem', color: '#fff', margin: 0 }}>
+                    TELÃO HUD (TELA ÚNICA)
                   </h3>
                   <ArrowRight size={18} color="var(--primary-cyan)" />
                 </div>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-                  Para projetores: Exibe o Storytelling, as 12 Pílulas de Vídeo, o Cronômetro e o Placar de Líderes.
+                  Visão geral integrada: Storytelling, slides com dock retrátil, vídeos e dinâmicas na mesma tela.
                 </p>
               </div>
             </button>
 
-            {/* Opção 2: Terminal do Aluno */}
+            {/* Opção 3: Terminal do Aluno */}
             <button
               onClick={() => setMode('aluno_form')}
               className="naval-card"
               style={{
-                padding: '20px',
+                padding: '16px 20px',
                 textAlign: 'left',
                 cursor: 'pointer',
                 background: 'rgba(15, 35, 61, 0.8)',
@@ -250,20 +320,22 @@ export default function Home({ onEnterTelao, onEnterAluno }) {
             </div>
 
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button
-                type="button"
-                onClick={() => setMode('choice')}
-                className="btn-tactical btn-outline"
-                style={{ flex: 1, padding: '12px' }}
-              >
-                VOLTAR
-              </button>
+              {!isRestrictedToAluno && (
+                <button
+                  type="button"
+                  onClick={() => setMode('choice')}
+                  className="btn-tactical btn-outline"
+                  style={{ flex: 1, padding: '12px' }}
+                >
+                  VOLTAR
+                </button>
+              )}
 
               <button
                 type="submit"
                 disabled={!nomeGuerra.trim()}
                 className="btn-tactical btn-gold"
-                style={{ flex: 2, padding: '12px' }}
+                style={{ flex: isRestrictedToAluno ? 1 : 2, padding: '14px', fontSize: '1rem', fontWeight: 700 }}
               >
                 <span>EMBARCAR NA MISSÃO</span>
                 <ArrowRight size={18} />

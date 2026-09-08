@@ -25,9 +25,15 @@ export default function AlunoPage({ roomCode = 'EPM2026', nomeGuerra = 'Marinhei
     const unsubscribe = realtimeEngine.subscribe((snapshot) => {
       setData(snapshot);
       // Atualiza o estado do aluno atual a partir do snapshot
-      const me = snapshot.participantes.find(p => p.nome === nomeGuerra);
+      const me = snapshot.participantes.find(
+        (p) => p.nome.toLowerCase() === (nomeGuerra || '').toLowerCase()
+      );
       if (me) {
-        setCurrentStudent(me);
+        setCurrentStudent((prev) => ({
+          ...me,
+          xp: Math.max(prev.xp || 0, me.xp || 0),
+          badges: Array.from(new Set([...(prev.badges || []), ...(me.badges || [])]))
+        }));
       }
     });
 
@@ -35,11 +41,24 @@ export default function AlunoPage({ roomCode = 'EPM2026', nomeGuerra = 'Marinhei
   }, [roomCode, nomeGuerra]);
 
   const handleAnswerSubmit = (alunoNome, perguntaId, opcaoId, correta, xpGanho, newBadge) => {
+    // Atualização otimista imediata na interface do aluno
+    if (correta) {
+      setCurrentStudent((prev) => ({
+        ...prev,
+        xp: (prev.xp || 0) + (xpGanho || 0),
+        badges: newBadge && !prev.badges?.includes(newBadge) ? [...(prev.badges || []), newBadge] : prev.badges
+      }));
+    }
     realtimeEngine.submitAnswer(alunoNome, perguntaId, opcaoId, correta, 0, xpGanho, newBadge);
   };
 
   const handleSendDoubt = (alunoNome, texto) => {
     realtimeEngine.sendDoubt(alunoNome, texto);
+  };
+
+  // Deslogar: volta para a tela de login do aluno, NUNCA para o menu de terminais do instrutor
+  const handleLogoutAluno = () => {
+    window.location.href = `/?sala=${encodeURIComponent(roomCode)}&modo=aluno`;
   };
 
   return (
@@ -48,7 +67,7 @@ export default function AlunoPage({ roomCode = 'EPM2026', nomeGuerra = 'Marinhei
         role="aluno"
         roomCode={roomCode}
         participantCount={data.participantes.length}
-        onBackHome={onBackHome}
+        onBackHome={handleLogoutAluno}
       />
 
       <AlunoHUD

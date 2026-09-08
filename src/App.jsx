@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import Home from './pages/Home';
 import TelaoPage from './pages/TelaoPage';
 import AlunoPage from './pages/AlunoPage';
+import ApresentadorPage from './pages/ApresentadorPage';
+import ProjetorPage from './pages/ProjetorPage';
 import ErrorBoundary from './components/common/ErrorBoundary';
 
 export default function App() {
-  const [currentRoute, setCurrentRoute] = useState('home'); // 'home', 'telao', 'aluno'
+  const [currentRoute, setCurrentRoute] = useState('home'); // 'home', 'telao', 'aluno', 'apresentador', 'projetor'
   const [roomCode, setRoomCode] = useState('EPM2026');
   const [nomeGuerra, setNomeGuerra] = useState('Marinheiro Silva');
 
@@ -18,7 +20,11 @@ export default function App() {
 
       setRoomCode(urlSala);
 
-      if (path === '/telao' || params.get('modo') === 'telao') {
+      if (path === '/apresentador' || params.get('modo') === 'apresentador') {
+        setCurrentRoute('apresentador');
+      } else if (path === '/projetor' || params.get('modo') === 'projetor') {
+        setCurrentRoute('projetor');
+      } else if (path === '/telao' || params.get('modo') === 'telao') {
         setCurrentRoute('telao');
       } else if (path === '/aluno' || (params.get('modo') === 'aluno' && urlNome)) {
         setNomeGuerra(urlNome || 'Marinheiro');
@@ -53,7 +59,21 @@ export default function App() {
         {currentRoute === 'home' && (
           <Home
             onEnterTelao={(sala) => navigateTo('telao', sala)}
+            onEnterApresentador={(sala) => navigateTo('apresentador', sala)}
             onEnterAluno={(sala, nome) => navigateTo('aluno', sala, nome)}
+          />
+        )}
+
+        {currentRoute === 'apresentador' && (
+          <ApresentadorPage
+            roomCode={roomCode}
+            onBackHome={() => navigateTo('home')}
+          />
+        )}
+
+        {currentRoute === 'projetor' && (
+          <ProjetorPage
+            roomCode={roomCode}
           />
         )}
 

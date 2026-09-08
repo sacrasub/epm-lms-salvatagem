@@ -11,7 +11,9 @@ class RealtimeEngine {
     this.state = {
       missaoAtual: 1,
       etapaIndex: 0,
-      tipoConteudo: 'storytelling', // 'storytelling', 'video', 'esquema', 'dinamica'
+      tipoConteudo: 'slides', // 'slides', 'storytelling', 'video', 'esquema', 'dinamica'
+      slideAtualIndex: 0,
+      isBlackout: false,
       videoAtivoId: null,
       dinamicaAtiva: false,
       perguntaAtiva: null,
@@ -60,7 +62,23 @@ class RealtimeEngine {
         const unsubPart = onValue(partRef, (snapshot) => {
           const val = snapshot.val();
           if (val) {
-            this.participantes = Object.values(val);
+            const list = Object.values(val);
+            list.forEach((remoteP) => {
+              if (!remoteP || !remoteP.nome) return;
+              const idx = this.participantes.findIndex(
+                (localP) => localP.nome.toLowerCase() === remoteP.nome.toLowerCase()
+              );
+              if (idx >= 0) {
+                this.participantes[idx] = {
+                  ...this.participantes[idx],
+                  ...remoteP,
+                  xp: Math.max(this.participantes[idx].xp || 0, remoteP.xp || 0),
+                  badges: Array.from(new Set([...(this.participantes[idx].badges || []), ...(remoteP.badges || [])]))
+                };
+              } else {
+                this.participantes.push(remoteP);
+              }
+            });
             this.notifyListeners();
           }
         });
@@ -204,9 +222,16 @@ class RealtimeEngine {
         if (type === 'UPDATE_STATE') {
           set(ref(db, `salas/${this.roomCode}/state`), { ...this.state, ...payload });
         } else if (type === 'JOIN_PARTICIPANT') {
-          set(ref(db, `salas/${this.roomCode}/participantes/${payload.nome.replace(/[.#$[\]]/g, '_')}`), payload);
+          const pKey = payload.nome.replace(/[.#$[\]]/g, '_');
+          set(ref(db, `salas/${this.roomCode}/participantes/${pKey}`), payload);
         } else if (type === 'SUBMIT_ANSWER') {
           push(ref(db, `salas/${this.roomCode}/respostas`), payload);
+          // Atualiza também o nó do participante correspondente no Firebase
+          const part = this.participantes.find((item) => item.nome.toLowerCase() === (payload.participanteNome || '').toLowerCase());
+          if (part) {
+            const pKey = part.nome.replace(/[.#$[\]]/g, '_');
+            set(ref(db, `salas/${this.roomCode}/participantes/${pKey}`), part);
+          }
         } else if (type === 'SUBMIT_DOUBT') {
           push(ref(db, `salas/${this.roomCode}/duvidas`), payload);
         }
@@ -238,8 +263,18 @@ class RealtimeEngine {
 
       case 'JOIN_PARTICIPANT': {
         const p = message.payload;
-        const exists = this.participantes.find((item) => item.nome === p.nome);
-        if (!exists) {
+        const existingIdx = this.participantes.findIndex(
+          (item) => item.nome.toLowerCase() === (p.nome || '').toLowerCase()
+        );
+        if (existingIdx >= 0) {
+          const existing = this.participantes[existingIdx];
+          this.participantes[existingIdx] = {
+            ...existing,
+            ...p,
+            xp: Math.max(existing.xp || 0, p.xp || 0),
+            badges: Array.from(new Set([...(existing.badges || []), ...(p.badges || [])]))
+          };
+        } else {
           this.participantes.push({
             id: p.id || String(Date.now()),
             nome: p.nome,
@@ -255,12 +290,34 @@ class RealtimeEngine {
         const resp = message.payload;
         this.respostas.push(resp);
 
-        // Atualiza XP do participante
-        const part = this.participantes.find((item) => item.nome === resp.participanteNome);
+        // Atualiza XP e Badges do participante
+        const part = this.participantes.find(
+          (item) => item.nome.toLowerCase() === (resp.participanteNome || '').toLowerCase()
+        );
         if (part) {
-          part.xp = (part.xp || 0) + (resp.xpGanho || 0);
+          if (resp.correta) {
+            part.xp = (part.xp || 0) + (resp.xpGanho || 0);
+          }
           if (resp.newBadge && !part.badges.includes(resp.newBadge)) {
             part.badges.push(resp.newBadge);
+          }
+
+          // Persiste localmente os dados do aluno
+          if (typeof window !== 'undefined') {
+            try {
+              const pKey = part.nome.replace(/[.#$[\]]/g, '_');
+              localStorage.setItem(`epm_aluno_${this.roomCode}_${pKey}`, JSON.stringify(part));
+            } catch (e) {}
+          }
+
+          // Persiste no Firebase
+          if (isFirebaseConfigured() && db) {
+            try {
+              const pKey = part.nome.replace(/[.#$[\]]/g, '_');
+              set(ref(db, `salas/${this.roomCode}/participantes/${pKey}`), part);
+            } catch (e) {
+              console.warn('[Firebase Save Part Err]', e);
+            }
           }
         }
         break;
@@ -293,10 +350,26 @@ class RealtimeEngine {
     this.emit('UPDATE_STATE', {
       missaoAtual: missaoId,
       etapaIndex: 0,
-      tipoConteudo: 'storytelling',
+      tipoConteudo: 'slides',
+      slideAtualIndex: 0,
+      isBlackout: false,
       videoAtivoId: null,
       dinamicaAtiva: false,
       perguntaAtiva: null
+    });
+  }
+
+  setSlide(slideIndex, isBlackout = false) {
+    this.emit('UPDATE_STATE', {
+      tipoConteudo: 'slides',
+      slideAtualIndex: slideIndex,
+      isBlackout: Boolean(isBlackout)
+    });
+  }
+
+  setBlackout(isBlackout) {
+    this.emit('UPDATE_STATE', {
+      isBlackout: Boolean(isBlackout)
     });
   }
 
@@ -332,15 +405,62 @@ class RealtimeEngine {
 
   // Ações do Aluno / Smartphone
   registerStudent(nome) {
-    const newStudent = {
-      id: 'student_' + Math.random().toString(36).substring(2, 9),
-      nome: nome.trim(),
-      patente: 'Praticante de Salvatagem',
-      xp: 0,
-      badges: []
-    };
-    this.emit('JOIN_PARTICIPANT', newStudent);
-    return newStudent;
+    const nomeLimpo = (nome || 'Marinheiro').trim();
+    const pKey = nomeLimpo.replace(/[.#$[\]]/g, '_');
+
+    // 1. Verifica se já existe na lista de participantes em memória
+    let student = this.participantes.find(
+      (item) => item.nome.toLowerCase() === nomeLimpo.toLowerCase()
+    );
+
+    // 2. Se não estiver em memória, tenta recuperar do localStorage
+    if (!student && typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(`epm_aluno_${this.roomCode}_${pKey}`);
+        if (saved) {
+          student = JSON.parse(saved);
+        }
+      } catch (e) {}
+    }
+
+    // 3. Se ainda não existir, cria o registro inicial
+    if (!student) {
+      student = {
+        id: 'student_' + Math.random().toString(36).substring(2, 9),
+        nome: nomeLimpo,
+        patente: 'Praticante de Salvatagem',
+        xp: 0,
+        badges: []
+      };
+    } else {
+      student = {
+        ...student,
+        nome: nomeLimpo,
+        xp: student.xp || 0,
+        badges: student.badges || []
+      };
+    }
+
+    // Atualiza/insere na lista de participantes
+    const idx = this.participantes.findIndex(
+      (item) => item.nome.toLowerCase() === nomeLimpo.toLowerCase()
+    );
+    if (idx >= 0) {
+      this.participantes[idx] = { ...this.participantes[idx], ...student };
+    } else {
+      this.participantes.push(student);
+    }
+
+    // Salva no localStorage
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(`epm_aluno_${this.roomCode}_${pKey}`, JSON.stringify(student));
+        localStorage.setItem('epm_last_nome_guerra', nomeLimpo);
+      } catch (e) {}
+    }
+
+    this.emit('JOIN_PARTICIPANT', student);
+    return student;
   }
 
   submitAnswer(participanteNome, perguntaId, opcaoId, correta, tempoMs, xpGanho, newBadge = null) {

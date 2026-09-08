@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Anchor, Users, QrCode, Volume2, Wifi, Radio } from 'lucide-react';
+import { ArrowLeft, Anchor, Users, QrCode, Volume2, Wifi, Radio, Monitor, LogOut } from 'lucide-react';
 import { isSupabaseConfigured } from '../../lib/supabaseClient';
 import { isFirebaseConfigured } from '../../lib/firebaseClient';
 import { soundManager } from '../../lib/soundEffects';
@@ -21,11 +21,11 @@ export default function Navbar({ role = 'home', roomCode = 'EPM2026', participan
           <button 
             onClick={onBackHome}
             className="btn-tactical btn-outline"
-            style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-            title="Voltar ao Início"
+            style={{ padding: '6px 12px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+            title={role === 'aluno' ? 'Desconectar / Trocar Nome de Guerra' : 'Voltar ao Início'}
           >
-            <ArrowLeft size={16} />
-            <span style={{ display: 'none', md: 'inline' }}>Início</span>
+            {role === 'aluno' ? <LogOut size={16} /> : <ArrowLeft size={16} />}
+            <span>{role === 'aluno' ? 'Sair' : 'Início'}</span>
           </button>
         )}
 
@@ -96,6 +96,19 @@ export default function Navbar({ role = 'home', roomCode = 'EPM2026', participan
             {participantCount}
           </span>
         </div>
+
+        {/* Botão para Modo Apresentador (2 Telas) */}
+        {role === 'telao' && (
+          <a
+            href={`/apresentador?sala=${encodeURIComponent(roomCode)}`}
+            className="btn-tactical btn-gold"
+            style={{ padding: '8px 14px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
+            title="Abrir o Cockpit do Apresentador (Laptop + Projetor)"
+          >
+            <Monitor size={16} />
+            <span>Modo Apresentador (2 Telas)</span>
+          </a>
+        )}
 
         {/* QR Code Trigger (Para o Telão) */}
         {role === 'telao' && onOpenQr && (
