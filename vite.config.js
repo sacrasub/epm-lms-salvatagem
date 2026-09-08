@@ -6,6 +6,14 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: true,
-    port: 5173
+    port: 5173,
+    watch: {
+      ignored: [
+        '**/02 - AULAS CAAQ BC 2026/**',
+        '**/*.pptx',
+        '**/*.ppt',
+        '**/.git/**'
+      ]
+    }
   }
 });
