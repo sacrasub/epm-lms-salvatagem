@@ -12,6 +12,9 @@ import {
   X, 
   ChevronLeft, 
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  Compass,
   Grid,
   FileText,
   Presentation,
@@ -32,10 +35,14 @@ export default function SlidePresenter({
   onCloseDynamic
 }) {
   const containerRef = useRef(null);
+  const dockTimerRef = useRef(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [activeModal, setActiveModal] = useState(null); // 'video', 'dinamica', 'leaderboard', 'infografico', 'duvidas', 'grid'
   const [selectedVideo, setSelectedVideo] = useState(mission.videos[0]);
   const [showAnswerResults, setShowAnswerResults] = useState(false);
+
+  // Controle de visibilidade da barra tática (Auto-hide / Só aparece quando quiser)
+  const [isDockVisible, setIsDockVisible] = useState(false);
 
   // Controle de Página por Página (Passador de Slides)
   const slides = mission.slidesImages && mission.slidesImages.length > 0 
@@ -45,6 +52,19 @@ export default function SlidePresenter({
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isBlackout, setIsBlackout] = useState(false);
   const [usePdfFallback, setUsePdfFallback] = useState(false);
+
+  // Manipuladores de mouse para o dock tático
+  const handleShowDock = () => {
+    if (dockTimerRef.current) clearTimeout(dockTimerRef.current);
+    setIsDockVisible(true);
+  };
+
+  const handleDockMouseLeave = () => {
+    if (dockTimerRef.current) clearTimeout(dockTimerRef.current);
+    dockTimerRef.current = setTimeout(() => {
+      setIsDockVisible(false);
+    }, 2500);
+  };
 
   // Reseta para o primeiro slide se mudar de missão
   useEffect(() => {
@@ -169,6 +189,9 @@ export default function SlidePresenter({
       } else if (e.key === 'f' || e.key === 'F' || e.key === 'F5') {
         e.preventDefault();
         toggleFullscreen();
+      } else if (e.key === 'h' || e.key === 'H' || e.key === 'm' || e.key === 'M') {
+        e.preventDefault();
+        setIsDockVisible((prev) => !prev);
       }
     };
 
@@ -261,6 +284,16 @@ export default function SlidePresenter({
 
         {/* Controles da Direita */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            onClick={() => setIsDockVisible((prev) => !prev)}
+            className={`btn-tactical ${isDockVisible ? 'btn-gold' : 'btn-outline'}`}
+            style={{ padding: '6px 10px', fontSize: '0.8rem' }}
+            title="Mostrar / Ocultar Barra Tática de Recursos (Tecla H)"
+          >
+            <Compass size={14} />
+            <span>{isDockVisible ? 'OCULTAR BARRA' : 'COMANDOS (H)'}</span>
+          </button>
+
           <button
             onClick={() => setIsBlackout((prev) => !prev)}
             className={`btn-tactical ${isBlackout ? 'btn-danger' : 'btn-outline'}`}
@@ -470,24 +503,81 @@ export default function SlidePresenter({
         )}
       </div>
 
-      {/* DOCK TÁTICO FLUTUANTE (Floating Quick-Action Dock) */}
-      <div style={{
-        position: 'absolute',
-        bottom: '20px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        background: 'rgba(7, 22, 44, 0.88)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        border: '1px solid var(--border-glow)',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 229, 255, 0.25)',
-        borderRadius: '999px',
-        padding: '7px 14px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        zIndex: 40
-      }}>
+      {/* ZONA INVISÍVEL DE PROXIMIDADE NO RODAPÉ (Aproximar o mouse faz a barra aparecer) */}
+      <div
+        onMouseEnter={handleShowDock}
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: '32px',
+          zIndex: 35,
+          cursor: 'pointer'
+        }}
+      />
+
+      {/* GATILHO DISCRETO NO RODAPÉ QUANDO A BARRA ESTIVER OCULTA */}
+      {!isDockVisible && (
+        <button
+          onClick={handleShowDock}
+          style={{
+            position: 'absolute',
+            bottom: '8px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'rgba(7, 22, 44, 0.75)',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid rgba(0, 229, 255, 0.35)',
+            borderRadius: '999px',
+            padding: '3px 14px',
+            color: 'var(--primary-cyan)',
+            fontSize: '0.72rem',
+            fontFamily: 'var(--font-tactical)',
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            cursor: 'pointer',
+            zIndex: 36,
+            boxShadow: '0 4px 14px rgba(0,0,0,0.6)',
+            opacity: 0.55,
+            transition: 'opacity 0.2s, transform 0.2s'
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.55'; }}
+          title="Clique ou aproxime o mouse para exibir os Comandos Táticos (Tecla H)"
+        >
+          <ChevronUp size={13} />
+          <span>RECURSOS DO LMS (H)</span>
+        </button>
+      )}
+
+      {/* DOCK TÁTICO FLUTUANTE (Floating Quick-Action Dock) — SÓ APARECE QUANDO O INSTRUTOR QUISER */}
+      <div 
+        onMouseEnter={handleShowDock}
+        onMouseLeave={handleDockMouseLeave}
+        style={{
+          position: 'absolute',
+          bottom: '20px',
+          left: '50%',
+          transform: isDockVisible ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(140%)',
+          opacity: isDockVisible ? 1 : 0,
+          pointerEvents: isDockVisible ? 'all' : 'none',
+          transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+          background: 'rgba(7, 22, 44, 0.92)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          border: '1px solid var(--border-glow)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.75), 0 0 20px rgba(0, 229, 255, 0.3)',
+          borderRadius: '999px',
+          padding: '7px 14px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          zIndex: 40
+        }}
+      >
         {/* 1. Botão Anterior / Próximo no Dock */}
         {!usePdfFallback && totalSlides > 0 && (
           <>
@@ -614,6 +704,18 @@ export default function SlidePresenter({
               {duvidas.length}
             </span>
           )}
+        </button>
+
+        <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.2)', margin: '0 2px' }} />
+
+        {/* 8. Botão de Recolher / Fechar o Dock */}
+        <button
+          onClick={() => setIsDockVisible(false)}
+          className="btn-tactical btn-outline"
+          style={{ padding: '7px 10px', borderRadius: '999px' }}
+          title="Ocultar Barra (Tecla H)"
+        >
+          <ChevronDown size={15} />
         </button>
       </div>
 

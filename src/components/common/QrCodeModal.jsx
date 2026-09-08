@@ -1,12 +1,33 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { X, Smartphone, ShieldCheck } from 'lucide-react';
+import { X, Smartphone, ShieldCheck, Copy, Check, Globe } from 'lucide-react';
 
 export default function QrCodeModal({ isOpen, onClose, roomCode = 'EPM2026' }) {
   if (!isOpen) return null;
 
-  const currentHost = typeof window !== 'undefined' ? window.location.origin : 'https://epm.vercel.app';
-  const joinUrl = `${currentHost}/?sala=${roomCode}&modo=aluno`;
+  const [copied, setCopied] = useState(false);
+
+  // Se o instrutor estiver no localhost ou 127.0.0.1, o celular do aluno precisa acessar o domínio público da nuvem!
+  const isLocal = typeof window !== 'undefined' && (
+    window.location.hostname === 'localhost' || 
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname.startsWith('192.168.')
+  );
+
+  const publicProductionUrl = 'https://epm-marinha.vercel.app';
+  const baseUrl = isLocal 
+    ? publicProductionUrl 
+    : (typeof window !== 'undefined' ? window.location.origin : publicProductionUrl);
+
+  const joinUrl = `${baseUrl}/?sala=${roomCode}&modo=aluno`;
+
+  const handleCopy = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(joinUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   return (
     <div style={{
@@ -83,20 +104,34 @@ export default function QrCodeModal({ isOpen, onClose, roomCode = 'EPM2026' }) {
         </div>
 
         <div style={{
-          background: 'rgba(7, 22, 44, 0.8)',
-          border: '1px solid var(--border-subtle)',
+          background: 'rgba(7, 22, 44, 0.85)',
+          border: '1px solid var(--border-glow)',
           borderRadius: 'var(--radius-sm)',
-          padding: '12px',
-          marginBottom: '20px'
+          padding: '14px',
+          marginBottom: '20px',
+          textAlign: 'center'
         }}>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: '4px' }}>
-            OU ACESSE PELO NAVEGADOR:
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--primary-cyan)', textTransform: 'uppercase', marginBottom: '6px', fontWeight: 700 }}>
+            <Globe size={14} />
+            <span>LINK DE ACESSO DIRETO PARA SMARTPHONES:</span>
           </div>
-          <div style={{ fontFamily: 'var(--font-tactical)', fontSize: '1.1rem', color: 'var(--primary-cyan)', wordBreak: 'break-all' }}>
+          <div style={{ fontFamily: 'var(--font-tactical)', fontSize: '1.05rem', color: '#fff', wordBreak: 'break-all', marginBottom: '10px' }}>
             {joinUrl}
           </div>
-          <div style={{ marginTop: '6px', fontSize: '0.85rem', color: 'var(--gold-marinha)', fontWeight: 600 }}>
-            CÓDIGO DA SALA: <span style={{ color: '#fff' }}>{roomCode}</span>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+            <button
+              onClick={handleCopy}
+              className="btn-tactical btn-cyan"
+              style={{ padding: '6px 14px', fontSize: '0.8rem' }}
+            >
+              {copied ? <Check size={14} /> : <Copy size={14} />}
+              <span>{copied ? 'LINK COPIADO!' : 'COPIAR LINK'}</span>
+            </button>
+
+            <span style={{ fontSize: '0.85rem', color: 'var(--gold-marinha)', fontWeight: 700 }}>
+              SALA: <strong style={{ color: '#fff' }}>{roomCode}</strong>
+            </span>
           </div>
         </div>
 
