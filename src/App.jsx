@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Home from './pages/Home';
 import TelaoPage from './pages/TelaoPage';
 import AlunoPage from './pages/AlunoPage';
+import ErrorBoundary from './components/common/ErrorBoundary';
 
 export default function App() {
   const [currentRoute, setCurrentRoute] = useState('home'); // 'home', 'telao', 'aluno'
@@ -13,14 +14,14 @@ export default function App() {
       const path = window.location.pathname;
       const params = new URLSearchParams(window.location.search);
       const urlSala = params.get('sala') || 'EPM2026';
-      const urlNome = params.get('nome') || 'Marinheiro';
+      const urlNome = params.get('nome');
 
       setRoomCode(urlSala);
 
       if (path === '/telao' || params.get('modo') === 'telao') {
         setCurrentRoute('telao');
-      } else if (path === '/aluno' || params.get('modo') === 'aluno') {
-        setNomeGuerra(urlNome);
+      } else if (path === '/aluno' || (params.get('modo') === 'aluno' && urlNome)) {
+        setNomeGuerra(urlNome || 'Marinheiro');
         setCurrentRoute('aluno');
       } else {
         setCurrentRoute('home');
@@ -47,28 +48,30 @@ export default function App() {
   };
 
   return (
-    <div className="app-container">
-      {currentRoute === 'home' && (
-        <Home
-          onEnterTelao={(sala) => navigateTo('telao', sala)}
-          onEnterAluno={(sala, nome) => navigateTo('aluno', sala, nome)}
-        />
-      )}
+    <ErrorBoundary>
+      <div className="app-container">
+        {currentRoute === 'home' && (
+          <Home
+            onEnterTelao={(sala) => navigateTo('telao', sala)}
+            onEnterAluno={(sala, nome) => navigateTo('aluno', sala, nome)}
+          />
+        )}
 
-      {currentRoute === 'telao' && (
-        <TelaoPage
-          roomCode={roomCode}
-          onBackHome={() => navigateTo('home')}
-        />
-      )}
+        {currentRoute === 'telao' && (
+          <TelaoPage
+            roomCode={roomCode}
+            onBackHome={() => navigateTo('home')}
+          />
+        )}
 
-      {currentRoute === 'aluno' && (
-        <AlunoPage
-          roomCode={roomCode}
-          nomeGuerra={nomeGuerra}
-          onBackHome={() => navigateTo('home')}
-        />
-      )}
-    </div>
+        {currentRoute === 'aluno' && (
+          <AlunoPage
+            roomCode={roomCode}
+            nomeGuerra={nomeGuerra}
+            onBackHome={() => navigateTo('home')}
+          />
+        )}
+      </div>
+    </ErrorBoundary>
   );
 }

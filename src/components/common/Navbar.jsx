@@ -1,3 +1,5 @@
+import React, { useState } from 'react';
+import { ArrowLeft, Anchor, Users, QrCode, Volume2, Wifi, Radio } from 'lucide-react';
 import { isSupabaseConfigured } from '../../lib/supabaseClient';
 import { isFirebaseConfigured } from '../../lib/firebaseClient';
 import { soundManager } from '../../lib/soundEffects';
