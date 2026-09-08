@@ -1,10 +1,12 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient';
+import { db, ref, set, onValue, push, isFirebaseConfigured } from './firebaseClient';
 
 class RealtimeEngine {
   constructor() {
     this.roomCode = 'EPM2026';
     this.channel = null;
     this.broadcastChannel = null;
+    this.firebaseUnsubscribes = [];
     this.listeners = new Set();
     this.state = {
       missaoAtual: 1,
@@ -33,6 +35,63 @@ class RealtimeEngine {
       this.broadcastChannel.onmessage = (event) => {
         this.handleIncomingMessage(event.data);
       };
+    }
+
+    // 2. Conecta ao Firebase Realtime Database se configurado
+    if (isFirebaseConfigured() && db) {
+      try {
+        // Limpa listeners antigos se houver
+        this.firebaseUnsubscribes.forEach(unsub => unsub && unsub());
+        this.firebaseUnsubscribes = [];
+
+        // Escuta o estado da sala
+        const stateRef = ref(db, `salas/${this.roomCode}/state`);
+        const unsubState = onValue(stateRef, (snapshot) => {
+          const val = snapshot.val();
+          if (val) {
+            this.state = { ...this.state, ...val };
+            this.notifyListeners();
+          }
+        });
+        this.firebaseUnsubscribes.push(unsubState);
+
+        // Escuta participantes
+        const partRef = ref(db, `salas/${this.roomCode}/participantes`);
+        const unsubPart = onValue(partRef, (snapshot) => {
+          const val = snapshot.val();
+          if (val) {
+            this.participantes = Object.values(val);
+            this.notifyListeners();
+          }
+        });
+        this.firebaseUnsubscribes.push(unsubPart);
+
+        // Escuta respostas
+        const respRef = ref(db, `salas/${this.roomCode}/respostas`);
+        const unsubResp = onValue(respRef, (snapshot) => {
+          const val = snapshot.val();
+          if (val) {
+            this.respostas = Object.values(val);
+            this.notifyListeners();
+          }
+        });
+        this.firebaseUnsubscribes.push(unsubResp);
+
+        // Escuta dúvidas
+        const duvRef = ref(db, `salas/${this.roomCode}/duvidas`);
+        const unsubDuv = onValue(duvRef, (snapshot) => {
+          const val = snapshot.val();
+          if (val) {
+            this.duvidas = Object.values(val).reverse();
+            this.notifyListeners();
+          }
+        });
+        this.firebaseUnsubscribes.push(unsubDuv);
+
+        console.log(`[Firebase] Conectado à sala ${this.roomCode}`);
+      } catch (err) {
+        console.warn('[Firebase] Erro ao conectar:', err);
+      }
     }
 
     // 2. Tenta conectar ao Supabase Realtime se configurado
@@ -137,6 +196,23 @@ class RealtimeEngine {
     // Dispara no canal de broadcast local
     if (this.broadcastChannel) {
       this.broadcastChannel.postMessage(message);
+    }
+
+    // Grava no Firebase Realtime Database se configurado
+    if (isFirebaseConfigured() && db) {
+      try {
+        if (type === 'UPDATE_STATE') {
+          set(ref(db, `salas/${this.roomCode}/state`), { ...this.state, ...payload });
+        } else if (type === 'JOIN_PARTICIPANT') {
+          set(ref(db, `salas/${this.roomCode}/participantes/${payload.nome.replace(/[.#$[\]]/g, '_')}`), payload);
+        } else if (type === 'SUBMIT_ANSWER') {
+          push(ref(db, `salas/${this.roomCode}/respostas`), payload);
+        } else if (type === 'SUBMIT_DOUBT') {
+          push(ref(db, `salas/${this.roomCode}/duvidas`), payload);
+        }
+      } catch (e) {
+        console.warn('[Firebase Emit Err]', e);
+      }
     }
 
     // Dispara no Supabase Realtime Broadcast se configurado
