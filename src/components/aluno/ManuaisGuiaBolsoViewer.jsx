@@ -19,8 +19,8 @@ export const MATERIAIS_CURSO = {
       dia: 'Dia 08',
       titulo: 'Guia Técnico de Sobrevivência Pessoal',
       subtitulo: 'Equipamentos Individuais, Colete SOLAS Tipo I & Tabela Mestra',
-      url: '/assets/Guia_Técnico_de_Sobrevivência_Pessoal.png',
-      formato: 'PNG Alta Resolução (5.1 MB)',
+      url: '/assets/Guia_Técnico_de_Sobrevivência_Pessoal.webp',
+      formato: 'WebP Ultra-Rápido (370 KB)',
       tipo: 'imagem'
     },
     {
@@ -28,8 +28,8 @@ export const MATERIAIS_CURSO = {
       dia: 'Dia 09',
       titulo: 'Guia de Sobrevivência Marítima',
       subtitulo: 'Engenharia da Balsa Salva-Vidas, HRU, Elo Fraco & Racionamento',
-      url: '/assets/Guia_de_Sobrevivência_Marítima.png',
-      formato: 'PNG Alta Resolução (4.7 MB)',
+      url: '/assets/Guia_de_Sobrevivência_Marítima.webp',
+      formato: 'WebP Ultra-Rápido (290 KB)',
       tipo: 'imagem'
     },
     {
@@ -37,8 +37,8 @@ export const MATERIAIS_CURSO = {
       dia: 'Dia 10',
       titulo: 'Guia de Emergência e Resgate',
       subtitulo: 'Pirotecnia, Transponder SART, EPIRB 406 MHz & Helicóptero SAR',
-      url: '/assets/Guia_de_Sobrevivência_e_Emergência.png',
-      formato: 'PNG Alta Resolução (4.5 MB)',
+      url: '/assets/Guia_de_Sobrevivência_e_Emergência.webp',
+      formato: 'WebP Ultra-Rápido (340 KB)',
       tipo: 'imagem'
     }
   ],

@@ -192,31 +192,96 @@ export default function QuizCard({
           <span>TRANSMITIR DECISÃO AO TELÃO</span>
         </button>
       ) : (
-        /* Feedback Imediato no Celular */
-        <div style={{
-          background: isCorrect ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255, 51, 68, 0.15)',
-          border: `1px solid ${isCorrect ? 'var(--tactical-green)' : 'var(--solas-red)'}`,
-          borderRadius: 'var(--radius-sm)',
-          padding: '14px',
-          textAlign: 'center'
-        }}>
+        /* Tela de Pós-Envio: Aguardando Próximo Desafio & Fundamentação Tática (M5) */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div style={{
+            background: isCorrect ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255, 51, 68, 0.15)',
+            border: `1px solid ${isCorrect ? 'var(--tactical-green)' : 'var(--solas-red)'}`,
+            borderRadius: 'var(--radius-sm)',
+            padding: '16px',
+            textAlign: 'center'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              fontFamily: 'var(--font-tactical)',
+              fontSize: '1.25rem',
+              fontWeight: 700,
+              color: isCorrect ? 'var(--tactical-green)' : 'var(--solas-red)',
+              marginBottom: '6px'
+            }}>
+              {isCorrect ? <CheckCircle2 size={24} /> : <XCircle size={24} />}
+              <span>{isCorrect ? `DECISÃO CORRETA! (+${earnedXP} XP)` : 'DECISÃO INCORRETA! (0 XP)'}</span>
+            </div>
+
+            <div style={{ fontSize: '0.85rem', color: '#fff', marginTop: '4px' }}>
+              Sua resposta (Opção <strong>{selectedOption || 'Nenhuma'}</strong>) foi computada na central do Telão.
+            </div>
+
+            <div style={{
+              marginTop: '10px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'rgba(7, 22, 44, 0.8)',
+              padding: '6px 14px',
+              borderRadius: '20px',
+              border: '1px solid var(--border-subtle)',
+              fontSize: '0.82rem'
+            }}>
+              <span style={{ color: 'var(--text-muted)' }}>Saldo Atualizado:</span>
+              <strong style={{ color: 'var(--primary-cyan)', fontFamily: 'var(--font-tactical)' }}>
+                {(currentXP || 0) + (isCorrect ? earnedXP : 0)} XP
+              </strong>
+            </div>
+          </div>
+
+          {/* Fundamentação Regulamentar SOLAS / DPC */}
+          {(pergunta.explicacao || pergunta.referencia) && (
+            <div style={{
+              background: 'rgba(15, 35, 61, 0.7)',
+              border: '1px solid rgba(0, 229, 255, 0.25)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '14px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '0.72rem', color: 'var(--gold-marinha)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  FUNDAMENTAÇÃO OFICIAL DPC / SOLAS:
+                </span>
+                {pergunta.referencia && (
+                  <span className="tag-badge tag-badge-gold" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>
+                    {pergunta.referencia}
+                  </span>
+                )}
+              </div>
+              <p style={{ margin: 0, fontSize: '0.86rem', color: '#e2e8f0', lineHeight: 1.45 }}>
+                {pergunta.explicacao}
+              </p>
+            </div>
+          )}
+
+          {/* Radar / Aguardando Próxima Etapa */}
+          <div style={{
+            textAlign: 'center',
+            padding: '12px',
+            background: 'rgba(7, 22, 44, 0.6)',
+            borderRadius: 'var(--radius-sm)',
+            border: '1px dashed var(--border-subtle)',
+            fontSize: '0.8rem',
+            color: 'var(--text-muted)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '8px',
-            fontFamily: 'var(--font-tactical)',
-            fontSize: '1.2rem',
-            fontWeight: 700,
-            color: isCorrect ? 'var(--tactical-green)' : 'var(--solas-red)',
-            marginBottom: '6px'
+            gap: '8px'
           }}>
-            {isCorrect ? <CheckCircle2 size={22} /> : <XCircle size={22} />}
-            <span>{isCorrect ? `DECISÃO CORRETA! (+${earnedXP} XP)` : 'DECISÃO INCORRETA! (0 XP)'}</span>
+            <span className="animate-pulse" style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary-cyan)' }}></span>
+            <span>Aguardando o Instrutor avançar para a próxima etapa no Telão...</span>
           </div>
-          <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-            Confira a justificativa oficial da Convenção SOLAS e DPC no Telão da Sala.
-          </p>
         </div>
       )}
     </div>

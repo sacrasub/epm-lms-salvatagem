@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Anchor, Monitor, Smartphone, Shield, Radio, ArrowRight, Award } from 'lucide-react';
+import { Anchor, Monitor, Smartphone, Shield, Radio, ArrowRight, Award, Lock, AlertTriangle } from 'lucide-react';
 import { isSupabaseConfigured } from '../lib/supabaseClient';
+import { realtimeEngine } from '../lib/realtimeEngine';
 
 export default function Home({ onEnterTelao, onEnterApresentador, onEnterAluno }) {
   const [roomCode, setRoomCode] = useState('EPM2026');
   const [nomeGuerra, setNomeGuerra] = useState('');
   const [mode, setMode] = useState('choice'); // 'choice', 'aluno_form'
   const [isRestrictedToAluno, setIsRestrictedToAluno] = useState(false);
+  const [isQrLocked, setIsQrLocked] = useState(false);
+  const [nameError, setNameError] = useState(null);
+  const [nameSuggestions, setNameSuggestions] = useState([]);
   const isCloudConnected = isSupabaseConfigured();
 
   // Se vier com parâmetros na URL (ex: ?sala=EPM2026&modo=aluno)
@@ -15,7 +19,14 @@ export default function Home({ onEnterTelao, onEnterApresentador, onEnterAluno }
     const paramSala = params.get('sala');
     const paramModo = params.get('modo');
 
-    if (paramSala) setRoomCode(paramSala);
+    if (paramSala) {
+      setRoomCode(paramSala);
+      setIsQrLocked(true);
+      realtimeEngine.init(paramSala);
+    } else {
+      realtimeEngine.init('EPM2026');
+    }
+
     if (paramModo === 'aluno') {
       setMode('aluno_form');
       setIsRestrictedToAluno(true);
@@ -32,8 +43,20 @@ export default function Home({ onEnterTelao, onEnterApresentador, onEnterAluno }
 
   const handleStartAluno = (e) => {
     e.preventDefault();
-    if (!nomeGuerra.trim()) return;
-    onEnterAluno(roomCode.trim(), nomeGuerra.trim());
+    setNameError(null);
+    setNameSuggestions([]);
+    const trimmedNome = nomeGuerra.trim();
+    if (!trimmedNome) return;
+
+    // Validação de unicidade de nome de guerra na sala (M6)
+    const check = realtimeEngine.checkNomeGuerraAvailability(trimmedNome);
+    if (!check.disponivel) {
+      setNameError(check.motivo);
+      setNameSuggestions(check.sugestoes || []);
+      return;
+    }
+
+    onEnterAluno(roomCode.trim(), trimmedNome);
   };
 
   return (
@@ -295,6 +318,33 @@ export default function Home({ onEnterTelao, onEnterApresentador, onEnterAluno }
               </p>
             </div>
 
+            {/* Campo da Sala com trava visual se veio por QR Code (M9) */}
+            <div style={{
+              background: 'rgba(7, 22, 44, 0.7)',
+              border: isQrLocked ? '1px solid var(--gold-marinha)' : '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '10px 14px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {isQrLocked ? <Lock size={15} color="var(--gold-marinha)" /> : <Radio size={15} color="var(--primary-cyan)" />}
+                <span style={{ fontSize: '0.8rem', color: isQrLocked ? 'var(--gold-marinha)' : 'var(--text-muted)', fontWeight: isQrLocked ? 700 : 400 }}>
+                  {isQrLocked ? 'SALA VINCULADA VIA QR CODE:' : 'SALA DA SESSÃO:'}
+                </span>
+              </div>
+              <span style={{
+                color: isQrLocked ? 'var(--gold-marinha)' : 'var(--primary-cyan)',
+                fontFamily: 'var(--font-tactical)',
+                fontSize: '1rem',
+                fontWeight: 700,
+                letterSpacing: '1px'
+              }}>
+                {roomCode}
+              </span>
+            </div>
+
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '6px' }}>
                 NOME DE GUERRA DO MARINHEIRO / ALUNO:
@@ -305,11 +355,14 @@ export default function Home({ onEnterTelao, onEnterApresentador, onEnterAluno }
                 autoFocus
                 placeholder="Ex: Marinheiro Silva / Oficial Santos"
                 value={nomeGuerra}
-                onChange={(e) => setNomeGuerra(e.target.value)}
+                onChange={(e) => {
+                  setNomeGuerra(e.target.value);
+                  if (nameError) setNameError(null);
+                }}
                 style={{
                   width: '100%',
                   background: 'rgba(7, 22, 44, 0.9)',
-                  border: '1px solid var(--border-subtle)',
+                  border: nameError ? '1px solid var(--solas-red)' : '1px solid var(--border-subtle)',
                   borderRadius: 'var(--radius-sm)',
                   padding: '14px',
                   color: '#fff',
@@ -317,6 +370,50 @@ export default function Home({ onEnterTelao, onEnterApresentador, onEnterAluno }
                   outline: 'none'
                 }}
               />
+
+              {/* Alerta de Nome Duplicado e Sugestões Táticas (M6) */}
+              {nameError && (
+                <div style={{
+                  marginTop: '10px',
+                  background: 'rgba(255, 51, 68, 0.12)',
+                  border: '1px solid var(--solas-red)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '12px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--solas-red)', fontSize: '0.82rem', fontWeight: 600 }}>
+                    <AlertTriangle size={16} />
+                    <span>{nameError}</span>
+                  </div>
+
+                  {nameSuggestions.length > 0 && (
+                    <div>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        Sugestões disponíveis para embarque imediato:
+                      </span>
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '6px', flexWrap: 'wrap' }}>
+                        {nameSuggestions.map((sug) => (
+                          <button
+                            key={sug}
+                            type="button"
+                            onClick={() => {
+                              setNomeGuerra(sug);
+                              setNameError(null);
+                              setNameSuggestions([]);
+                            }}
+                            className="btn-tactical btn-outline"
+                            style={{ padding: '4px 10px', fontSize: '0.78rem', borderColor: 'var(--primary-cyan)', color: 'var(--primary-cyan)' }}
+                          >
+                            Usar "{sug}"
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div style={{ display: 'flex', gap: '10px' }}>

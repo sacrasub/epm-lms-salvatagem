@@ -1,0 +1,37 @@
+{
+  "name": "EPM LMS Salvatagem — Marinha do Brasil",
+  "short_name": "EPM Salvatagem",
+  "description": "Sistema LMS Tático de Técnicas de Sobrevivência Pessoal (TSP) e Salvatagem Marítima SOLAS/DPC",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#040c17",
+  "theme_color": "#07162c",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Entrada do Aluno",
+      "short_name": "Aluno",
+      "url": "/?modo=aluno",
+      "description": "Terminal de bordo do marinheiro"
+    },
+    {
+      "name": "Cockpit Apresentador",
+      "short_name": "Instrutor",
+      "url": "/apresentador",
+      "description": "Painel de controle do instrutor"
+    },
+    {
+      "name": "Telão da Sala",
+      "short_name": "Telão",
+      "url": "/telao",
+      "description": "Projeção em tela grande"
+    }
+  ]
+}

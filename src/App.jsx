@@ -1,97 +1,114 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { BrowserRouter, Routes, Route, useNavigate, useSearchParams, Navigate } from 'react-router-dom';
 import Home from './pages/Home';
 import TelaoPage from './pages/TelaoPage';
 import AlunoPage from './pages/AlunoPage';
 import ApresentadorPage from './pages/ApresentadorPage';
 import ProjetorPage from './pages/ProjetorPage';
+import AdminPage from './pages/AdminPage';
 import ErrorBoundary from './components/common/ErrorBoundary';
 
-export default function App() {
-  const [currentRoute, setCurrentRoute] = useState('home'); // 'home', 'telao', 'aluno', 'apresentador', 'projetor'
-  const [roomCode, setRoomCode] = useState('EPM2026');
-  const [nomeGuerra, setNomeGuerra] = useState('Marinheiro Silva');
+// Wrapper da Home com detecção de redirecionamento por query param
+function HomeRoute() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    const parseUrl = () => {
-      const path = window.location.pathname;
-      const params = new URLSearchParams(window.location.search);
-      const urlSala = params.get('sala') || 'EPM2026';
-      const urlNome = params.get('nome');
+  const sala = searchParams.get('sala') || 'EPM2026';
+  const modo = searchParams.get('modo');
+  const nome = searchParams.get('nome');
 
-      setRoomCode(urlSala);
-
-      if (path === '/apresentador' || params.get('modo') === 'apresentador') {
-        setCurrentRoute('apresentador');
-      } else if (path === '/projetor' || params.get('modo') === 'projetor') {
-        setCurrentRoute('projetor');
-      } else if (path === '/telao' || params.get('modo') === 'telao') {
-        setCurrentRoute('telao');
-      } else if (path === '/aluno' || (params.get('modo') === 'aluno' && urlNome)) {
-        setNomeGuerra(urlNome || 'Marinheiro');
-        setCurrentRoute('aluno');
-      } else {
-        setCurrentRoute('home');
-      }
-    };
-
-    parseUrl();
-    window.addEventListener('popstate', parseUrl);
-    return () => window.removeEventListener('popstate', parseUrl);
-  }, []);
-
-  const navigateTo = (route, sala = roomCode, nome = nomeGuerra) => {
-    setRoomCode(sala);
-    setNomeGuerra(nome);
-    setCurrentRoute(route);
-
-    const queryParams = new URLSearchParams();
-    queryParams.set('sala', sala);
-    if (route === 'aluno') queryParams.set('nome', nome);
-    queryParams.set('modo', route);
-
-    const newUrl = `/${route === 'home' ? '' : route}?${queryParams.toString()}`;
-    window.history.pushState({}, '', newUrl);
-  };
+  // Redireciona se a URL tiver parâmetros legados ?modo=...
+  if (modo === 'apresentador') {
+    return <Navigate to={`/apresentador?sala=${encodeURIComponent(sala)}`} replace />;
+  }
+  if (modo === 'projetor') {
+    return <Navigate to={`/projetor?sala=${encodeURIComponent(sala)}`} replace />;
+  }
+  if (modo === 'telao') {
+    return <Navigate to={`/telao?sala=${encodeURIComponent(sala)}`} replace />;
+  }
+  if (modo === 'aluno' && nome) {
+    return <Navigate to={`/aluno?sala=${encodeURIComponent(sala)}&nome=${encodeURIComponent(nome)}`} replace />;
+  }
 
   return (
+    <Home
+      onEnterTelao={(s) => navigate(`/telao?sala=${encodeURIComponent(s)}`)}
+      onEnterApresentador={(s) => navigate(`/apresentador?sala=${encodeURIComponent(s)}`)}
+      onEnterAluno={(s, n) => navigate(`/aluno?sala=${encodeURIComponent(s)}&nome=${encodeURIComponent(n)}`)}
+    />
+  );
+}
+
+function ApresentadorRoute() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const sala = searchParams.get('sala') || 'EPM2026';
+
+  return (
+    <ApresentadorPage
+      roomCode={sala}
+      onBackHome={() => navigate('/')}
+    />
+  );
+}
+
+function ProjetorRoute() {
+  const [searchParams] = useSearchParams();
+  const sala = searchParams.get('sala') || 'EPM2026';
+
+  return <ProjetorPage roomCode={sala} />;
+}
+
+function TelaoRoute() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const sala = searchParams.get('sala') || 'EPM2026';
+
+  return (
+    <TelaoPage
+      roomCode={sala}
+      onBackHome={() => navigate('/')}
+    />
+  );
+}
+
+function AlunoRoute() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const sala = searchParams.get('sala') || 'EPM2026';
+  const nome = searchParams.get('nome') || 'Marinheiro';
+
+  return (
+    <AlunoPage
+      roomCode={sala}
+      nomeGuerra={nome}
+      onBackHome={() => navigate('/')}
+    />
+  );
+}
+
+function AdminRoute() {
+  const navigate = useNavigate();
+  return <AdminPage onBackHome={() => navigate('/')} />;
+}
+
+export default function App() {
+  return (
     <ErrorBoundary>
-      <div className="app-container">
-        {currentRoute === 'home' && (
-          <Home
-            onEnterTelao={(sala) => navigateTo('telao', sala)}
-            onEnterApresentador={(sala) => navigateTo('apresentador', sala)}
-            onEnterAluno={(sala, nome) => navigateTo('aluno', sala, nome)}
-          />
-        )}
-
-        {currentRoute === 'apresentador' && (
-          <ApresentadorPage
-            roomCode={roomCode}
-            onBackHome={() => navigateTo('home')}
-          />
-        )}
-
-        {currentRoute === 'projetor' && (
-          <ProjetorPage
-            roomCode={roomCode}
-          />
-        )}
-
-        {currentRoute === 'telao' && (
-          <TelaoPage
-            roomCode={roomCode}
-            onBackHome={() => navigateTo('home')}
-          />
-        )}
-
-        {currentRoute === 'aluno' && (
-          <AlunoPage
-            roomCode={roomCode}
-            nomeGuerra={nomeGuerra}
-            onBackHome={() => navigateTo('home')}
-          />
-        )}
-      </div>
+      <BrowserRouter>
+        <div className="app-container">
+          <Routes>
+            <Route path="/" element={<HomeRoute />} />
+            <Route path="/apresentador" element={<ApresentadorRoute />} />
+            <Route path="/projetor" element={<ProjetorRoute />} />
+            <Route path="/telao" element={<TelaoRoute />} />
+            <Route path="/aluno" element={<AlunoRoute />} />
+            <Route path="/admin" element={<AdminRoute />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
+      </BrowserRouter>
     </ErrorBoundary>
   );
 }

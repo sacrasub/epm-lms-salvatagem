@@ -1,9 +1,11 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient';
-import { db, ref, set, onValue, push, isFirebaseConfigured } from './firebaseClient';
+import { db, ref, set, onValue, push, query, orderByChild, isFirebaseConfigured } from './firebaseClient';
 
 class RealtimeEngine {
   constructor() {
     this.roomCode = 'EPM2026';
+    this.clientId = 'client_' + Math.random().toString(36).substring(2, 9);
+    this.processedMsgIds = new Set();
     this.channel = null;
     this.broadcastChannel = null;
     this.firebaseUnsubscribes = [];
@@ -95,12 +97,19 @@ class RealtimeEngine {
         });
         this.firebaseUnsubscribes.push(unsubResp);
 
-        // Escuta dúvidas
+        // Escuta dúvidas com ordenação cronológica estrita
         const duvRef = ref(db, `salas/${this.roomCode}/duvidas`);
-        const unsubDuv = onValue(duvRef, (snapshot) => {
+        const duvQuery = query(duvRef, orderByChild('timestamp'));
+        const unsubDuv = onValue(duvQuery, (snapshot) => {
           const val = snapshot.val();
           if (val) {
-            this.duvidas = Object.values(val).reverse();
+            const list = Object.entries(val).map(([k, v]) => ({ id: k, ...v }));
+            // Ordena do mais recente para o mais antigo para visualização na central do instrutor
+            list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            this.duvidas = list;
+            this.notifyListeners();
+          } else {
+            this.duvidas = [];
             this.notifyListeners();
           }
         });
@@ -209,7 +218,15 @@ class RealtimeEngine {
   }
 
   emit(type, payload) {
-    const message = { type, payload, timestamp: Date.now() };
+    const msgId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+    const message = { id: msgId, senderId: this.clientId, type, payload, timestamp: Date.now() };
+
+    // Registra ID para não processar duas vezes se ecoar remotamente
+    this.processedMsgIds.add(msgId);
+    if (this.processedMsgIds.size > 100) {
+      const first = this.processedMsgIds.values().next().value;
+      this.processedMsgIds.delete(first);
+    }
 
     // Dispara no canal de broadcast local
     if (this.broadcastChannel) {
@@ -259,6 +276,18 @@ class RealtimeEngine {
 
   handleIncomingMessage(message) {
     if (!message || !message.type) return;
+
+    // Previne reprocessamento por eco ou duplicatas (M2)
+    if (message.id) {
+      if (this.processedMsgIds.has(message.id) && message.senderId !== this.clientId) {
+        return; // Já processado
+      }
+      this.processedMsgIds.add(message.id);
+      if (this.processedMsgIds.size > 100) {
+        const first = this.processedMsgIds.values().next().value;
+        this.processedMsgIds.delete(first);
+      }
+    }
 
     switch (message.type) {
       case 'UPDATE_STATE':
@@ -527,6 +556,38 @@ class RealtimeEngine {
       localStorage.setItem(`epm_duv_${this.roomCode}`, JSON.stringify(this.duvidas));
     }
     this.emit('DELETE_DOUBT', { id: doubtId });
+  }
+
+  checkNomeGuerraAvailability(nome) {
+    const nomeLimpo = (nome || '').trim();
+    if (!nomeLimpo) return { disponivel: false, motivo: 'Nome de Guerra não pode ser vazio' };
+    const pKey = nomeLimpo.replace(/[.#$[\]]/g, '_');
+
+    // Se o dispositivo local já possui este perfil salvo, permite reingressar normalmente
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(`epm_aluno_${this.roomCode}_${pKey}`);
+        if (saved) return { disponivel: true, isReentry: true };
+      } catch (e) {}
+    }
+
+    const existe = this.participantes.find(
+      (p) => (p.nome || '').trim().toLowerCase() === nomeLimpo.toLowerCase()
+    );
+
+    if (existe) {
+      return {
+        disponivel: false,
+        motivo: `O nome "${nomeLimpo}" já está em uso nesta sessão por outro marinheiro.`,
+        sugestoes: [
+          `${nomeLimpo} II`,
+          `${nomeLimpo} Bravo`,
+          `${nomeLimpo} Jr`
+        ]
+      };
+    }
+
+    return { disponivel: true };
   }
 
   resetRoom() {

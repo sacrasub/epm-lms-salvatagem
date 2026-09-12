@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Navbar from '../components/common/Navbar';
 import AlunoHUD from '../components/aluno/AlunoHUD';
 import { realtimeEngine } from '../lib/realtimeEngine';
+import { reportingService } from '../lib/reportingService';
 
 export default function AlunoPage({ roomCode = 'EPM2026', nomeGuerra = 'Marinheiro', onBackHome }) {
   const [data, setData] = useState({
@@ -21,6 +22,7 @@ export default function AlunoPage({ roomCode = 'EPM2026', nomeGuerra = 'Marinhei
     realtimeEngine.init(roomCode);
     const student = realtimeEngine.registerStudent(nomeGuerra);
     setCurrentStudent(student);
+    reportingService.saveStudentSession(roomCode, student);
 
     const unsubscribe = realtimeEngine.subscribe((snapshot) => {
       setData(snapshot);
@@ -29,11 +31,13 @@ export default function AlunoPage({ roomCode = 'EPM2026', nomeGuerra = 'Marinhei
         (p) => p.nome.toLowerCase() === (nomeGuerra || '').toLowerCase()
       );
       if (me) {
-        setCurrentStudent((prev) => ({
+        const updatedMe = {
           ...me,
-          xp: Math.max(prev.xp || 0, me.xp || 0),
-          badges: Array.from(new Set([...(prev.badges || []), ...(me.badges || [])]))
-        }));
+          xp: Math.max(currentStudent.xp || 0, me.xp || 0),
+          badges: Array.from(new Set([...(currentStudent.badges || []), ...(me.badges || [])]))
+        };
+        setCurrentStudent(updatedMe);
+        reportingService.saveStudentSession(roomCode, updatedMe);
       }
     });
 
@@ -43,11 +47,15 @@ export default function AlunoPage({ roomCode = 'EPM2026', nomeGuerra = 'Marinhei
   const handleAnswerSubmit = (alunoNome, perguntaId, opcaoId, correta, xpGanho, newBadge) => {
     // Atualização otimista imediata na interface do aluno
     if (correta) {
-      setCurrentStudent((prev) => ({
-        ...prev,
-        xp: (prev.xp || 0) + (xpGanho || 0),
-        badges: newBadge && !prev.badges?.includes(newBadge) ? [...(prev.badges || []), newBadge] : prev.badges
-      }));
+      setCurrentStudent((prev) => {
+        const updated = {
+          ...prev,
+          xp: (prev.xp || 0) + (xpGanho || 0),
+          badges: newBadge && !prev.badges?.includes(newBadge) ? [...(prev.badges || []), newBadge] : prev.badges
+        };
+        reportingService.saveStudentSession(roomCode, updated);
+        return updated;
+      });
     }
     realtimeEngine.submitAnswer(alunoNome, perguntaId, opcaoId, correta, 0, xpGanho, newBadge);
   };
@@ -73,6 +81,7 @@ export default function AlunoPage({ roomCode = 'EPM2026', nomeGuerra = 'Marinhei
       <AlunoHUD
         state={data.state}
         aluno={currentStudent}
+        respostas={data.respostas}
         onAnswerSubmit={handleAnswerSubmit}
         onSendDoubt={handleSendDoubt}
       />

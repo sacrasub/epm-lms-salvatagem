@@ -130,7 +130,7 @@ export default function MochilaSalvamento({ xp = 0, badges = [], alunoNome = 'Al
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <a
-            href="/assets/Guia_Técnico_de_Sobrevivência_Pessoal.png"
+            href="/assets/Guia_Técnico_de_Sobrevivência_Pessoal.webp"
             target="_blank"
             rel="noreferrer"
             className="btn-tactical btn-outline"
@@ -141,7 +141,7 @@ export default function MochilaSalvamento({ xp = 0, badges = [], alunoNome = 'Al
           </a>
 
           <a
-            href="/assets/Guia_de_Sobrevivência_Marítima.png"
+            href="/assets/Guia_de_Sobrevivência_Marítima.webp"
             target="_blank"
             rel="noreferrer"
             className="btn-tactical btn-outline"
@@ -152,7 +152,7 @@ export default function MochilaSalvamento({ xp = 0, badges = [], alunoNome = 'Al
           </a>
 
           <a
-            href="/assets/Guia_de_Sobrevivência_e_Emergência.png"
+            href="/assets/Guia_de_Sobrevivência_e_Emergência.webp"
             target="_blank"
             rel="noreferrer"
             className="btn-tactical btn-outline"

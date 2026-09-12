@@ -11,7 +11,7 @@ export const MISSIONS = [
     slidesTitulo: 'Slides de Aula — Dia 08: Maritime Survival Tactics',
     slidesCount: 12,
     slidesImages: Array.from({ length: 12 }, (_, i) => `/slides/dia08/slide-${String(i + 1).padStart(2, '0')}.webp`),
-    infograficoUrl: '/assets/Guia_Técnico_de_Sobrevivência_Pessoal.png',
+    infograficoUrl: '/assets/Guia_Técnico_de_Sobrevivência_Pessoal.webp',
     infograficoTitulo: 'Infográfico Técnico — Equipamentos Individuais & Tabela Mestra',
     briefing: 'Alarme Geral de Emergência soou no meio da noite! Um abalroamento comprometeu a estanqueidade do casco. Sua primeira missão é combater o pânico imediato, reconhecer as 4 ameaças mortais e equipar seu escudo térmico individual.',
     videos: [
@@ -114,7 +114,7 @@ export const MISSIONS = [
     slidesTitulo: 'Slides de Aula — Dia 09: Engenharia da Sobrevivência',
     slidesCount: 15,
     slidesImages: Array.from({ length: 15 }, (_, i) => `/slides/dia09/slide-${String(i + 1).padStart(2, '0')}.webp`),
-    infograficoUrl: '/assets/Guia_de_Sobrevivência_Marítima.png',
+    infograficoUrl: '/assets/Guia_de_Sobrevivência_Marítima.webp',
     infograficoTitulo: 'Infográfico Técnico — Lançamentos, Eletrônica de Socorro e Pirotécnicos',
     briefing: 'A ordem oficial de abandono foi dada! O navio aderna rapidamente. Sua missão é coordenar o lançamento das balsas infláveis, garantir a atuação do escape hidrostático e ativar os guardiões eletrônicos de socorro (EPIRB e SART).',
     videos: [
@@ -216,7 +216,7 @@ export const MISSIONS = [
     slidesTitulo: 'Slides de Aula — Dia 10: Tactical Marine Survival',
     slidesCount: 15,
     slidesImages: Array.from({ length: 15 }, (_, i) => `/slides/dia10/slide-${String(i + 1).padStart(2, '0')}.webp`),
-    infograficoUrl: '/assets/Guia_de_Sobrevivência_e_Emergência.png',
+    infograficoUrl: '/assets/Guia_de_Sobrevivência_e_Emergência.webp',
     infograficoTitulo: 'Infográfico Técnico — Abandono, Hipotermia, Helicóptero e Racionamento',
     briefing: 'Vocês estão na balsa há mais de 18 horas. O mar está hostil e os recursos são limitados. A aeronave SAR do Esquadrão de Helicópteros da Marinha do Brasil acaba de pairar sobre a balsa! Execute os protocolos de segurança de voo e garanta a sobrevivência de todos.',
     videos: [

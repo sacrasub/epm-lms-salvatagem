@@ -137,24 +137,35 @@ export default function Navbar({ role = 'home', roomCode = 'EPM2026', participan
           <Volume2 size={16} />
         </button>
 
-        {/* Indicador de Conexão */}
+        {/* Indicador de Conexão com Ponto de Pulso Tático (M8) */}
         <div 
-          title={isCloudOnline ? 'Conexão em Nuvem Ativa (Firebase / Supabase)' : 'Modo Híbrido Local Ativo (BroadcastChannel)'}
+          title={isCloudOnline ? 'Conexão em Nuvem Ativa (Firebase RTDB / Supabase)' : 'Modo Híbrido Local Ativo (BroadcastChannel)'}
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
             fontSize: '0.75rem',
-            padding: '4px 8px',
-            borderRadius: '4px',
-            background: isCloudOnline ? 'rgba(0, 230, 118, 0.1)' : 'rgba(0, 229, 255, 0.1)',
+            padding: '5px 10px',
+            borderRadius: '20px',
+            background: isCloudOnline ? 'rgba(0, 230, 118, 0.12)' : 'rgba(0, 229, 255, 0.12)',
             color: isCloudOnline ? 'var(--tactical-green)' : 'var(--primary-cyan)',
-            border: `1px solid ${isCloudOnline ? 'rgba(0, 230, 118, 0.25)' : 'rgba(0, 229, 255, 0.25)'}`
+            border: `1px solid ${isCloudOnline ? 'rgba(0, 230, 118, 0.35)' : 'rgba(0, 229, 255, 0.35)'}`
           }}
         >
-          {isCloudOnline ? <Wifi size={14} /> : <Radio size={14} />}
-          <span style={{ fontFamily: 'var(--font-tactical)', fontWeight: 600 }}>
-            {isCloudOnline ? 'FIREBASE NUVEM' : 'LOCAL'}
+          <span 
+            className="animate-pulse"
+            style={{
+              display: 'inline-block',
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              background: isCloudOnline ? 'var(--tactical-green)' : 'var(--primary-cyan)',
+              boxShadow: isCloudOnline ? '0 0 8px var(--tactical-green)' : '0 0 8px var(--primary-cyan)'
+            }}
+          />
+          {isCloudOnline ? <Wifi size={13} /> : <Radio size={13} />}
+          <span style={{ fontFamily: 'var(--font-tactical)', fontWeight: 700, letterSpacing: '0.5px' }}>
+            {isCloudOnline ? 'ONLINE NUVEM' : 'REDE LOCAL'}
           </span>
         </div>
       </div>
